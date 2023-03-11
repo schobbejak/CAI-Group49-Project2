@@ -802,6 +802,7 @@ class BaselineAgent(ArtificialBrain):
         # Update the trust value based on for example the received messages
         for message in receivedMessages:
             # Increase agent trust in a team member that rescued a victim
+            self._checkHumanAction(message)
             if 'Collect' in message:
                 trustBeliefs[self._humanName]['competence']+=0.10
                 # Restrict the competence belief to a range of -1 to 1
@@ -861,3 +862,57 @@ class BaselineAgent(ArtificialBrain):
             else:
                 locs.append((x[i], max(y)))
         return locs
+
+    def _checkHumanAction(self, action):
+        print("Checking action - " + action)
+        # Search action
+        if 'Search' in action:
+            # Check if a previous area has been searched by human
+            # Go to area
+            # If obstacle or victim == not searched
+                # Decrease trust
+            # Else
+                # Increase trust
+            print("Check search action")
+
+        # Found critical action
+        if 'Found: critically injured' in action:
+            # Check in rescued victims if victim is rescued 
+            # If victim rescued:
+                # Decrease trust
+            # Else:
+                # Check location and identity when going to injured victim
+            print("Check location and identity of injured")
+
+        # Found mildly action
+        if 'Found: mildly injured' in action:
+            # Only stores location of victim so if victim is found after trust can be decreased
+            # Check in rescued victims if victim is rescued
+            # If victim rescued
+                # Decrease trust
+            # Else:
+                # Store location and identity of victim
+                # If identity already exists 
+                    # Decrease trust
+            print("Store victim found")
+
+        # Pick up mild victim
+        if 'Collect: mildly injured' in action:
+            # If victim is already rescued
+                # Decrease trust
+            # Else
+                # Store victim as rescued, remove found location
+                # If victim is come across later decrease trust of human
+            print("Store victim rescued")
+
+        # Help remove
+        if 'Remove: at' in action:
+            # Not the right obstacle
+                # Decrease trust
+            # Else
+                # Increase trust a bit
+            print('Help remove')
+
+            
+
+
