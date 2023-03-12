@@ -71,6 +71,14 @@ class BaselineAgent(ArtificialBrain):
         self._receivedMessages = []
         self._moving = False
 
+        # New stores
+        self._processedMessages = []
+        self._humanSearchedRooms = []
+        self._checkingSearch = False
+        self._checkingCritVic = False
+        self._checkingMildVic = False
+        self._checkingRemove = False
+
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
         self._state_tracker = StateTracker(agent_id=self.agent_id)
@@ -679,8 +687,10 @@ class BaselineAgent(ArtificialBrain):
             receivedMessages[member] = []
         for mssg in self.received_messages:
             for member in teamMembers:
-                if mssg.from_id == member:
+                if mssg.from_id == member and mssg not in self._processedMessages:
                     receivedMessages[member].append(mssg.content)
+                    # Add message to processed messages
+                    self._processedMessages.append(mssg)
         # Check the content of the received messages
         for mssgs in receivedMessages.values():
             for msg in mssgs:
@@ -689,6 +699,10 @@ class BaselineAgent(ArtificialBrain):
                     area = 'area ' + msg.split()[-1]
                     if area not in self._searchedRooms:
                         self._searchedRooms.append(area)
+                    # Add area to human searched areas
+                    if area not in self._humanSearchedRooms:
+                        self._humanSearchedRooms.append(area)
+
                 # If a received message involves team members finding victims, add these victims and their locations to memory
                 if msg.startswith("Found:"):
                     # Identify which victim and area it concerns
@@ -700,6 +714,9 @@ class BaselineAgent(ArtificialBrain):
                     # Add the area to the memory of searched areas
                     if loc not in self._searchedRooms:
                         self._searchedRooms.append(loc)
+                    # Add area to memore of human searched areas
+                    if loc not in self._humanSearchedRooms:
+                        self._humanSearchedRooms.append(loc)
                     # Add the victim and its location to memory
                     if foundVic not in self._foundVictims:
                         self._foundVictims.append(foundVic)
@@ -802,7 +819,6 @@ class BaselineAgent(ArtificialBrain):
         # Update the trust value based on for example the received messages
         for message in receivedMessages:
             # Increase agent trust in a team member that rescued a victim
-            self._checkHumanAction(message)
             if 'Collect' in message:
                 trustBeliefs[self._humanName]['competence']+=0.10
                 # Restrict the competence belief to a range of -1 to 1
@@ -864,16 +880,22 @@ class BaselineAgent(ArtificialBrain):
         return locs
 
     def _checkHumanAction(self, action):
-        print("Checking action - " + action)
+        # This function should only check the last received message otherwise it won't work
         # Search action
         if 'Search' in action:
-            # Check if a previous area has been searched by human
-            # Go to area
-            # If obstacle or victim == not searched
-                # Decrease trust
-            # Else
-                # Increase trust
-            print("Check search action")
+            # Implementation elsewhere:
+                # Come across obstacle, check if location was supposed to have been searched by human
+                # Come across victim, check if location was supposed to have been searched by human
+            
+            # Check if previous area has been searched fully by human
+            if(len(self._humanSearchedRooms) >= 2):
+                # Set checking search to true
+                self._checkingSearch = True
+
+                # Go to previously searched room
+
+                
+            print("Check search:" + " action")
 
         # Found critical action
         if 'Found: critically injured' in action:
@@ -913,6 +935,9 @@ class BaselineAgent(ArtificialBrain):
                 # Increase trust a bit
             print('Help remove')
 
-            
+    def _changeTrust(self, trustHuman):
+        # TODO: Implement trust change
+        # trustHuman: Boolean whether to increase or decrease trust
+        trust = 0       
 
 
