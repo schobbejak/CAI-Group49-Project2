@@ -318,6 +318,12 @@ class BaselineAgent(ArtificialBrain):
                 agent_location = state[self.agent_id]['location']
                 # Identify which obstacle is blocking the entrance
                 for info in state.values():
+                    # Check if object blocking is blocking a searched area
+                    if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance']:
+                        if self._door['room_name'] in self._humanSearchedRooms and self._checkingSearch:
+                            self._changeTrust(False)
+                            self._checkingSearch = False
+
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'rock' in info['obj_id']:
                         objects.append(info)
                         # Communicate which obstacle is blocking the entrance
@@ -778,6 +784,9 @@ class BaselineAgent(ArtificialBrain):
                     else:
                         area = 'area ' + msg.split()[-1]
                         self._sendMessage('Will come to ' + area + ' after dropping ' + self._goalVic + '.','RescueBot')
+
+                # TODO: Implement prob function for checking action
+                self._checkHumanAction(state, msg)
             # Store the current location of the human in memory
             if mssgs and mssgs[-1].split()[-1] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
                 self._humanLoc = int(mssgs[-1].split()[-1])
@@ -879,8 +888,8 @@ class BaselineAgent(ArtificialBrain):
                 locs.append((x[i], max(y)))
         return locs
 
-    def _checkHumanAction(self, action):
-        # This function should only check the last received message otherwise it won't work
+    def _checkHumanAction(self, state, action):
+        # This function should only check unprocessed messages
         # Search action
         if 'Search' in action:
             # Implementation elsewhere:
@@ -893,6 +902,25 @@ class BaselineAgent(ArtificialBrain):
                 self._checkingSearch = True
 
                 # Go to previously searched room
+                if not self._carrying:
+                    # Identify at which location the human needs help
+                    area = 'area ' + self._humanSearchedRooms[-2].split()[-1]
+                    self._door = state.get_room_doors(area)[0]
+                    self._doormat = state.get_room(area)[-1]['doormat']
+                    if area in self._searchedRooms:
+                        self._searchedRooms.remove(area)
+                    # Clear received messages (bug fix)
+                    self.received_messages = []
+                    self.received_messages_content = []
+                    self._moving = True
+                    self._remove = True
+                    if self._waiting and self._recentVic:
+                        self._todo.append(self._recentVic)
+                    self._waiting = False
+                    # Let the human know that the agent is coming over to help
+                    self._sendMessage('Moving to ' + str(self._door['room_name']) + ' to check if it has been searched','RescueBot')
+                    # Plan the path to the relevant area
+                    self._phase = Phase.PLAN_PATH_TO_ROOM
 
                 
             print("Check search:" + " action")
@@ -939,5 +967,7 @@ class BaselineAgent(ArtificialBrain):
         # TODO: Implement trust change
         # trustHuman: Boolean whether to increase or decrease trust
         trust = 0       
+        if not trustHuman:
+            print("HUMAN IS LIAR")
 
 
