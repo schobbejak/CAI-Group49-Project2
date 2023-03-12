@@ -70,6 +70,7 @@ class BaselineAgent(ArtificialBrain):
         self._recentVic = None
         self._receivedMessages = []
         self._moving = False
+        self._checkedMessages = []
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -800,9 +801,23 @@ class BaselineAgent(ArtificialBrain):
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
         # Update the trust value based on for example the received messages
+        # Load the messages to see which have been checked
+        #checkMessages = self.loadChecked(self._folder)
+        # Check last one based on probability function and add to csv file
+        if len(receivedMessages) > len(self._checkedMessages):
+            toBeChecked = receivedMessages[len(receivedMessages) - 1]
+            probability = 1
+            done = False
+            checked = False
+            if(random.random() < probability):
+                done = self._checkHumanAction(toBeChecked)
+                checked = True
+            self.writeChecked(self._folder, toBeChecked, self._checkedMessages, checked, done)
+            print(self._checkedMessages)
+
         for message in receivedMessages:
             # Increase agent trust in a team member that rescued a victim
-            self._checkHumanAction(message)
+            #self._checkHumanAction(message)
             if 'Collect' in message:
                 trustBeliefs[self._humanName]['competence']+=0.10
                 # Restrict the competence belief to a range of -1 to 1
@@ -863,11 +878,34 @@ class BaselineAgent(ArtificialBrain):
                 locs.append((x[i], max(y)))
         return locs
 
+    def writeChecked(self, folder, message, allMessages, checked, done):
+        #with open(folder + '/beliefs/checkedMessages.csv', mode='a') as csv_file:
+        #    csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        #    csv_writer.writerow([len(allMessages), message, checked, done])
+        self._checkedMessages.append({"message": message, "checked": checked, "done": done})
+
+
+    def loadChecked(self, folder):
+        checkedMessages = {}
+        with open(folder + '/beliefs/checkedMessages.csv') as csvfile:
+            reader = csv.reader(csvfile, delimiter=';', quotechar="'")
+            for row in reader:
+                # Retrieve trust values
+                id = float(row[0])
+                message = row[1]
+                checked = bool(row[2])
+                done = bool(row[3])
+                checkedMessages[id] = {'message': message, 'checked': checked, 'done': done}
+        return checkedMessages
+
     def _checkHumanAction(self, action):
         print("Checking action - " + action)
         # Search action
         if 'Search' in action:
             # Check if a previous area has been searched by human
+            self._phase = Phase.FOLLOW_PATH_TO_ROOM
+            self._door["room_name"] = action[-1]
+
             # Go to area
             # If obstacle or victim == not searched
                 # Decrease trust
@@ -912,6 +950,7 @@ class BaselineAgent(ArtificialBrain):
             # Else
                 # Increase trust a bit
             print('Help remove')
+        return False
 
             
 
