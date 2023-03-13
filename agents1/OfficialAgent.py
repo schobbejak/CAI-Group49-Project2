@@ -813,6 +813,20 @@ class BaselineAgent(ArtificialBrain):
             csv_writer.writerow([self._humanName,trustBeliefs[self._humanName]['competence'],trustBeliefs[self._humanName]['willingness']])
 
         return trustBeliefs
+    
+    def _isWillingEnough(self, willingness):
+        # Increment willigness by 1 so it fits between the range [0,2] (no negative willigness)
+        adjustedWilligness = willingness + 1
+        # Calculate probability
+        probability = adjustedWilligness / 2
+        return random.random() < probability
+
+    def _isCompetentEnough(self, competence):
+        # Increment competence by 1 so it fits between the range [0,2] (no negative competence)
+        adjustedCompetence = competence + 1
+        # Calculate probability
+        probability = adjustedCompetence / 2
+        return random.random() < probability
 
     def _sendMessage(self, mssg, sender):
         '''
