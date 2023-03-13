@@ -956,7 +956,12 @@ class BaselineAgent(ArtificialBrain):
             print("Store victim rescued")
 
         # Help remove
-        if 'Remove: at' in action:
+        if 'Remove:' in action:
+            if not self._carrying:
+                area = 'area ' + action.split()[-1]
+                self._door = state.get_room_doors(area)[0]
+                self._doormat = state.get_room(area)[-1]['doormat']
+                self._phase = Phase.PLAN_PATH_TO_ROOM
             # Not the right obstacle
                 # Decrease trust
             # Else
