@@ -98,6 +98,7 @@ class BaselineAgent(ArtificialBrain):
         self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages)
 
         # Check whether human is close in distance
+        # state[{is_human_agent: True}] checks if the human is in view of the rescuebot
         if state[{'is_human_agent': True}]:
             self._distanceHuman = 'close'
         if not state[{'is_human_agent': True}]:
@@ -136,6 +137,10 @@ class BaselineAgent(ArtificialBrain):
 
         # Ongoing loop untill the task is terminated, using different phases for defining the agent's behavior
         while True:
+            # Get the competence and willigness values of the human agent
+            human_competence = trustBeliefs[self._teamMembers[-1]]['competence']
+            human_willingness = trustBeliefs[self._teamMembers[-1]]['willingness']
+
             if Phase.INTRO == self._phase:
                 # Send introduction message
                 self._sendMessage('Hello! My name is RescueBot. Together we will collaborate and try to search and rescue the 8 victims on our right as quickly as possible. \
@@ -310,14 +315,26 @@ class BaselineAgent(ArtificialBrain):
                 agent_location = state[self.agent_id]['location']
                 # Identify which obstacle is blocking the entrance
                 for info in state.values():
+
+                    # Big rock case:
+                    # - RescueBot must work with human to remove big rock
+                    # - Human can decide whether to remove it or continue searching
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'rock' in info['obj_id']:
                         objects.append(info)
                         # Communicate which obstacle is blocking the entrance
-                        if self._answered == False and not self._remove and not self._waiting:                  
-                            self._sendMessage('Found rock blocking ' + str(self._door['room_name']) + '. Please decide whether to "Remove" or "Continue" searching. \n \n \
-                                Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + ' \
-                                \n clock - removal time: 5 seconds \n afstand - distance between us: ' + self._distanceHuman ,'RescueBot')
-                            self._waiting = True                          
+                        if self._answered == False and not self._remove and not self._waiting:    
+                            # If human is not willing or competent enough to help remove the big rock, decide to continue instead
+                            if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
+                                self._answered = True
+                                self._waiting = False
+                                self._tosearch.append(self._door['room_name'])
+                                self._phase = Phase.FIND_NEXT_GOAL
+                                return None, {}
+                            else:               
+                                self._sendMessage('Found rock blocking ' + str(self._door['room_name']) + '. Please decide whether to "Remove" or "Continue" searching. \n \n \
+                                    Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + ' \
+                                    \n clock - removal time: 5 seconds \n afstand - distance between us: ' + self._distanceHuman ,'RescueBot')
+                                self._waiting = True                          
                         # Determine the next area to explore if the human tells the agent not to remove the obstacle
                         if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
                             self._answered = True
@@ -341,6 +358,9 @@ class BaselineAgent(ArtificialBrain):
                         else:
                             return None, {}
 
+                    # Tree case:
+                    # - RescueBot must remove alone, human cannot help
+                    # - Human can decide whether to remove it or continue searching
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info['obj_id']:
                         objects.append(info)
                         # Communicate which obstacle is blocking the entrance
@@ -371,14 +391,33 @@ class BaselineAgent(ArtificialBrain):
                         else:
                             return None, {}
 
+                    # Small stone case:
+                    # - RescueBot can remove alone, but is faster with human assistance
+                    # - Human can decide whether to remove it together, let rescuebot remove alone or continue searching
+                    # - (!) A weak human cannot remove the small stone alone
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'stone' in info['obj_id']:
                         objects.append(info)
                         # Communicate which obstacle is blocking the entrance
                         if self._answered == False and not self._remove and not self._waiting:
-                            self._sendMessage('Found stones blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove together", "Remove alone", or "Continue" searching. \n \n \
-                                Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \
-                                \n clock - removal time together: 3 seconds \n afstand - distance between us: ' + self._distanceHuman + '\n clock - removal time alone: 20 seconds','RescueBot')
-                            self._waiting = True
+                            # If human is not willing or competent enough to help remove the small rock, 50% to remove alone or continue instead
+                            if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
+                                self._answered = True
+                                self._waiting = False
+                                rnd = random.random()
+                                if rnd >= 0.5:
+                                    self._sendMessage('Removing stones blocking ' + str(self._door['room_name']) + '.','RescueBot')
+                                    self._phase = Phase.ENTER_ROOM
+                                    self._remove = False
+                                    return RemoveObject.__name__, {'object_id': info['obj_id']}
+                                else:
+                                    self._tosearch.append(self._door['room_name'])
+                                    self._phase = Phase.FIND_NEXT_GOAL
+                                    return None, {}
+                            else:
+                                self._sendMessage('Found stones blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove together", "Remove alone", or "Continue" searching. \n \n \
+                                    Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \
+                                    \n clock - removal time together: 3 seconds \n afstand - distance between us: ' + self._distanceHuman + '\n clock - removal time alone: 20 seconds','RescueBot')
+                                self._waiting = True
                         # Determine the next area to explore if the human tells the agent not to remove the obstacle          
                         if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
                             self._answered = True

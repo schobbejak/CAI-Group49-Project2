@@ -16,9 +16,9 @@ class HumanBrain(HumanAgentBrain):
     def __init__(self, memorize_for_ticks=None, fov_occlusion=False, max_carry_objects=3, grab_range=1, drop_range=1, door_range=1, remove_range=1, strength='normal', name='human'):
         super().__init__(memorize_for_ticks=memorize_for_ticks)
         self.__fov_occlusion = fov_occlusion
-        if fov_occlusion:
-            warnings.warn("FOV Occlusion is not yet fully implemented. "
-                          "Setting fov_occlusion to True has no effect.")
+        # if fov_occlusion:
+        #     warnings.warn("FOV Occlusion is not yet fully implemented. "
+        #                   "Setting fov_occlusion to True has no effect.")
         self.__max_carry_objects = max_carry_objects
         self.__remove_range = remove_range
         self.__grab_range = grab_range
