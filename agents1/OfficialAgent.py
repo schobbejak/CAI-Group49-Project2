@@ -81,6 +81,7 @@ class BaselineAgent(ArtificialBrain):
         self._checkingMildVic = False
         self._checkingRemove = False
         self._currentCheckVic = ""
+        self._trustBeliefs = {}
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -106,6 +107,7 @@ class BaselineAgent(ArtificialBrain):
         self._processMessages(state, self._teamMembers, self._condition)
         # Initialize and update trust beliefs for team members
         trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
+        self._trustBeliefs = trustBeliefs
         self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages)
 
         # Check whether human is close in distance
@@ -324,7 +326,7 @@ class BaselineAgent(ArtificialBrain):
                     # Check if object blocking is blocking a searched area
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance']:
                         if self._door['room_name'] in self._humanSearchedRooms and self._checkingSearch:
-                            self._changeWillingness(False, trustBeliefs)
+                            self._changeWillingness(False)
                             self._checkingSearch = False
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'rock' in info['obj_id']:
                         objects.append(info)
@@ -1081,15 +1083,22 @@ class BaselineAgent(ArtificialBrain):
             print('Help remove')
         return False
 
-    def _changeWillingness(self, trust_human, trust_beliefs):
-        # TODO: Implement trust change
-        # trustHuman: Boolean whether to increase or decrease trust
+    def _changeWillingness(self, trust_human):
+        # trust_human: Boolean whether to increase or decrease willingness
         if trust_human:
-            trust_beliefs[self._humanName].willingness = trust_beliefs[self._humanName].willingness + 0.1
+            self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness + 0.1
             print("Willingness increased by 0.1")
         else:
-            trust_beliefs[self._humanName].willingness = trust_beliefs[self._humanName].willingness - 0.1
+            self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness - 0.1
             print("Willingness decreased by 0.1")
 
+    def _changeCompetence(self, trust_human):
+        # trust_human: Boolean whether to increase or decrease competence
+        if trust_human:
+            self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence + 0.1
+            print("Competence increased by 0.1")
+        else:
+            self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence - 0.1
+            print("Competence decreased by 0.1")
 
 
