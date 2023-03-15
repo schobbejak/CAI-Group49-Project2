@@ -321,7 +321,7 @@ class BaselineAgent(ArtificialBrain):
                     # Check if object blocking is blocking a searched area
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance']:
                         if self._door['room_name'] in self._humanSearchedRooms and self._checkingSearch:
-                            self._changeTrust(False)
+                            self._changeWillingness(False)
                             self._checkingSearch = False
 
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'rock' in info['obj_id']:
@@ -921,6 +921,10 @@ class BaselineAgent(ArtificialBrain):
                     self._sendMessage('Moving to ' + str(self._door['room_name']) + ' to check if it has been searched','RescueBot')
                     # Plan the path to the relevant area
                     self._phase = Phase.PLAN_PATH_TO_ROOM
+                else:
+                    # Robot is carrying something so don't check
+                    self._checkingSearch = False
+                    self._changeWillingness(True)
 
                 
             print("Check search:" + " action")
@@ -968,7 +972,7 @@ class BaselineAgent(ArtificialBrain):
                 # Increase trust a bit
             print('Help remove')
 
-    def _changeTrust(self, trustHuman):
+    def _changeWillingness(self, trustHuman):
         # TODO: Implement trust change
         # trustHuman: Boolean whether to increase or decrease trust
         trust = 0       
