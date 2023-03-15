@@ -921,6 +921,10 @@ class BaselineAgent(ArtificialBrain):
                     self._sendMessage('Moving to ' + str(self._door['room_name']) + ' to check if it has been searched','RescueBot')
                     # Plan the path to the relevant area
                     self._phase = Phase.PLAN_PATH_TO_ROOM
+                else:
+                    # Robot is carrying something so don't check
+                    self._checkingSearch = False
+                    self._changeWillingness(True)
 
                 
             print("Check search:" + " action")
