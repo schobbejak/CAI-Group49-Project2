@@ -494,12 +494,12 @@ class BaselineAgent(ArtificialBrain):
                                     # Communicate which victim was found
                                     self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + ' because you told me ' + vic + ' was located here.','RescueBot')
                                     if self._goalVic == self._currentCheckVic and self._checkingMildVic:
-                                        self._changeTrust(True)
+                                        self._changeWillingness(True)
                                         self._currentCheckVic = ""
                                         self._checkingMildVic = False
                                         print("increasing trust (Mild)")
                                     if self._goalVic == self._currentCheckVic and self._checkingCritVic:
-                                        self._changeTrust(True)
+                                        self._changeWillingness(True)
                                         self._currentCheckVic = ""
                                         self._checkingCritVic = False
                                         print("increasing trust (Crit)")
@@ -537,10 +537,10 @@ class BaselineAgent(ArtificialBrain):
                     if self._goalVic == self._currentCheckVic and self._checkingMildVic:
                         self._currentCheckVic = ""
                         self._checkingMildVic = False
-                        self._changeTrust(False)
+                        self._changeWillingness(False)
                         print("Decreasing trust level (Mild)")
                     if self._goalVic == self._currentCheckVic and self._checkingCritVic:
-                        self._changeTrust(True)
+                        self._changeWillingness(True)
                         self._currentCheckVic = ""
                         self._checkingCritVic = False
                         print("Decreasing trust (Crit)")
@@ -1001,7 +1001,7 @@ class BaselineAgent(ArtificialBrain):
             # If victim rescued
             if foundVic in self._collectedVictims:
                 # TODO: decrease trust
-                self._changeTrust(False)
+                self._changeWillingness(False)
             else:
                 self._currentCheckVic = foundVic
                 self._goalVic = foundVic
@@ -1034,7 +1034,7 @@ class BaselineAgent(ArtificialBrain):
             # If victim rescued
             if foundVic in self._collectedVictims:
                 # TODO: decrease trust
-                self._changeTrust(False)
+                self._changeWillingness(False)
             else:
                 self._currentCheckVic = foundVic
                 self._goalVic = foundVic
@@ -1074,7 +1074,7 @@ class BaselineAgent(ArtificialBrain):
             # Not the right obstacle
                 # Decrease trust
             # Else
-                # Increase trust a bit
+                # trust a bit
             print('Help remove')
         return False
 

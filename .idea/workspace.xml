@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="5c5332ac-2412-4133-a7bc-e3ebd03b0431" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/agents1/OfficialAgent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agents1/OfficialAgent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" beforeDir="false" afterPath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
