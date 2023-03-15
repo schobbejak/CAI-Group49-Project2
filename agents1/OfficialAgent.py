@@ -321,7 +321,7 @@ class BaselineAgent(ArtificialBrain):
                     # Check if object blocking is blocking a searched area
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance']:
                         if self._door['room_name'] in self._humanSearchedRooms and self._checkingSearch:
-                            self._changeTrust(False)
+                            self._changeWillingness(False, trustBeliefs)
                             self._checkingSearch = False
 
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'rock' in info['obj_id']:
@@ -968,11 +968,15 @@ class BaselineAgent(ArtificialBrain):
                 # Increase trust a bit
             print('Help remove')
 
-    def _changeTrust(self, trustHuman):
+    def _changeWillingness(self, trust_human, trust_beliefs):
         # TODO: Implement trust change
         # trustHuman: Boolean whether to increase or decrease trust
-        trust = 0       
-        if not trustHuman:
-            print("HUMAN IS LIAR")
+        if trust_human:
+            trust_beliefs[self._humanName].willingness = trust_beliefs[self._humanName].willingness + 0.1
+            print("Willingness increased by 0.1")
+        else:
+            trust_beliefs[self._humanName].willingness = trust_beliefs[self._humanName].willingness - 0.1
+            print("Willingness decreased by 0.1")
+
 
 
