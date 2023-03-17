@@ -525,7 +525,7 @@ class BaselineAgent(ArtificialBrain):
                                 # Communicate which victim the agent found and ask the human whether to rescue the victim now or at a later stage
                                 if 'mild' in vic and self._answered == False and not self._waiting:
                                     if self._checkingMildCollect and self._currentCheckCollect == vic:
-                                        self._changeTrust(False)
+                                        self._changeWillingness(False)
                                         self._checkingMildCollect = False
                                         self._currentCheckCollect = ""
                                         print("decrease trust")
@@ -536,7 +536,7 @@ class BaselineAgent(ArtificialBrain):
                                         
                                 if 'critical' in vic and self._answered == False and not self._waiting:
                                     if self._checkingCritCollect and self._currentCheckCollect == vic:
-                                        self._changeTrust(False)
+                                        self._changeWillingness(False)
                                         self._checkingCritCollect = False
                                         self._currentCheckCollect = ""
                                         print("decrease trust")
@@ -549,14 +549,14 @@ class BaselineAgent(ArtificialBrain):
                 if self._checkingMildCollect and self._goalVic not in self._roomVics:
                     self._foundVictims.append(self._goalVic)
                     self._collectedVictims.append(self._goalVic)
-                    self._changeTrust(True)
+                    self._changeWillingness(True)
                     self._checkingMildCollect = False
                     self._currentCheckVic = ""
                     print("increase trust")
                 if self._checkingCritCollect and self._goalVic not in self._roomVics:
                     self._foundVictims.append(self._goalVic)
                     self._collectedVictims.append(self._goalVic)
-                    self._changeTrust(True)
+                    self._changeWillingness(True)
                     self._checkingCritCollect = False
                     self._currentCheckVic = ""
                     print("increase trust")
@@ -574,8 +574,7 @@ class BaselineAgent(ArtificialBrain):
                     if self._goalVic == self._currentCheckVic and self._checkingCritVic:
                         self._foundVictims.remove(self._goalVic)
                         self._foundVictimLocs.pop(self._goalVic)
-                        self._changeTrust(True)
-                        self._changeWillingness(True)
+                        self._changeWillingness(False)
                         self._currentCheckVic = ""
                         self._checkingCritVic = False
                         print("Decreasing trust (Crit)")
@@ -1113,7 +1112,7 @@ class BaselineAgent(ArtificialBrain):
             loc = 'area ' + action.split()[-1]
             if collectedVic in self._collectedVictims[0:-1]:
                 # TODO: decrease trust
-                self._changeTrust(False)
+                self._changeWillingness(False)
                 self._checkingMildCollect = False
             else:
                 self._currentCheckCollect = collectedVic
@@ -1141,7 +1140,7 @@ class BaselineAgent(ArtificialBrain):
 
             if collectedVic in self._collectedVictims:
                 # TODO: decrease trust
-                self._changeTrust(False)
+                self._changeWillingness(False)
                 self._checkingCritCollect = False
                 print("decreasing trust")
             else:

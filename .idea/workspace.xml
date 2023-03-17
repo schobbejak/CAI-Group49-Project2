@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5c5332ac-2412-4133-a7bc-e3ebd03b0431" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/agents1/OfficialAgent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agents1/OfficialAgent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" beforeDir="false" afterPath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" afterDir="false" />
-    </list>
+    <list default="true" id="f4119340-1e7e-41b1-a2ad-96776f19413c" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -65,7 +62,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1678613631860</updated>
-      <workItem from="1678613633285" duration="30281000" />
+      <workItem from="1678613633285" duration="30557000" />
     </task>
     <servers />
   </component>
