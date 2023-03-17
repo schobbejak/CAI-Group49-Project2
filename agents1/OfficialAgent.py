@@ -483,8 +483,9 @@ class BaselineAgent(ArtificialBrain):
                             # Remember which victim the agent found in this area
                             if vic not in self._roomVics:
                                 self._roomVics.append(vic)
-
-                            if vic not in self._foundVictims and self._checkingSearch:
+                            
+                            # If victim found in searched area decrease willingness
+                            if vic not in self._foundVictims and self._checkingSearch and (vic[0:7] != "healthy"):
                                 self._changeWillingness(False)
                                 self._checkingSearch = False
 
@@ -608,6 +609,9 @@ class BaselineAgent(ArtificialBrain):
                     self._recentVic = None
                     self._phase = Phase.FIND_NEXT_GOAL
                 # Stop checking search
+                if self._checkingSearch:
+                    print("Didn't find anything wrong")
+                    self._changeWillingness(True)
                 self._checkingSearch = False
                 return Idle.__name__, {'duration_in_ticks': 25}
 
@@ -1086,19 +1090,19 @@ class BaselineAgent(ArtificialBrain):
     def _changeWillingness(self, trust_human):
         # trust_human: Boolean whether to increase or decrease willingness
         if trust_human:
-            self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness + 0.1
+            #self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness + 0.1
             print("Willingness increased by 0.1")
         else:
-            self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness - 0.1
+            #self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness - 0.1
             print("Willingness decreased by 0.1")
 
     def _changeCompetence(self, trust_human):
         # trust_human: Boolean whether to increase or decrease competence
         if trust_human:
-            self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence + 0.1
+            #self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence + 0.1
             print("Competence increased by 0.1")
         else:
-            self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence - 0.1
+            #self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence - 0.1
             print("Competence decreased by 0.1")
 
 
