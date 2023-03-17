@@ -1127,6 +1127,7 @@ class BaselineAgent(ArtificialBrain):
                 # TODO: decrease trust
                 self._changeTrust(False)
                 self._checkingCritCollect = False
+                print("decreasing trust")
             else:
                 self._currentCheckCollect = collectedVic
                 self._goalVic = collectedVic
