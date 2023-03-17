@@ -500,6 +500,7 @@ class BaselineAgent(ArtificialBrain):
                                 if vic == self._goalVic:
                                     # Communicate which victim was found
                                     self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + ' because you told me ' + vic + ' was located here.','RescueBot')
+                                    # If victim is in the room when checking increase trust
                                     if self._goalVic == self._currentCheckVic and self._checkingMildVic:
                                         self._changeWillingness(True)
                                         self._currentCheckVic = ""
@@ -524,28 +525,39 @@ class BaselineAgent(ArtificialBrain):
                                 self._foundVictimLocs[vic] = {'location': info['location'],'room': self._door['room_name'], 'obj_id': info['obj_id']}
                                 # Communicate which victim the agent found and ask the human whether to rescue the victim now or at a later stage
                                 if 'mild' in vic and self._answered == False and not self._waiting:
+                                    # If victim is in the room when checking decrease trust
                                     if self._checkingMildCollect and self._currentCheckCollect == vic:
                                         self._changeWillingness(False)
                                         self._checkingMildCollect = False
                                         self._currentCheckCollect = ""
                                         print("decrease trust")
+                                    # If victim is already collected decrease trust in agent
+                                    if vic in self._collectedVictims:
+                                        self._changeWillingness(False)
+                                        self._collectedVictims.remove(vic)
                                     self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue together", "Rescue alone", or "Continue" searching. \n \n \
                                         Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + '\n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + '\n \
                                         clock - extra time when rescuing alone: 15 seconds \n afstand - distance between us: ' + self._distanceHuman,'RescueBot')
                                     self._waiting = True
                                         
                                 if 'critical' in vic and self._answered == False and not self._waiting:
+                                    # If victim is in the room decrease trust
                                     if self._checkingCritCollect and self._currentCheckCollect == vic:
                                         self._changeWillingness(False)
                                         self._checkingCritCollect = False
                                         self._currentCheckCollect = ""
                                         print("decrease trust")
+                                    # If victim is already collected decrease trust in agent
+                                    if vic in self._collectedVictims:
+                                        self._changeWillingness(False)
+                                        self._collectedVictims.remove(vic)
                                     self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue" or "Continue" searching. \n\n \
                                         Important features to consider are: \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \n safe - victims rescued: ' + str(self._collectedVictims) + '\n \
                                         afstand - distance between us: ' + self._distanceHuman,'RescueBot')
                                     self._waiting = True    
                     # Execute move actions to explore the area
                     return action, {}
+                # If victim is not in the room when checking increase trust
                 if self._checkingMildCollect and self._goalVic not in self._roomVics:
                     self._foundVictims.append(self._goalVic)
                     self._collectedVictims.append(self._goalVic)
@@ -563,7 +575,7 @@ class BaselineAgent(ArtificialBrain):
                 # Communicate that the agent did not find the target victim in the area while the human previously communicated the victim was located here
                 if self._goalVic in self._foundVictims and self._goalVic not in self._roomVics and self._foundVictimLocs[self._goalVic]['room'] == self._door['room_name']:
                     self._sendMessage(self._goalVic + ' not present in ' + str(self._door['room_name']) + ' because I searched the whole area without finding ' + self._goalVic + '.','RescueBot')
-                    # change trust values if we were checking
+                    # Change trust values if we were checking
                     if self._goalVic == self._currentCheckVic and self._checkingMildVic:
                         self._foundVictims.remove(self._goalVic)
                         self._foundVictimLocs.pop(self._goalVic)
@@ -822,14 +834,14 @@ class BaselineAgent(ArtificialBrain):
                     # Add the area to the memory of searched areas
                     if loc not in self._searchedRooms:
                         self._searchedRooms.append(loc)
-                    # Add the victim and location to the memory of found victims
+                    # Add the victim and location to the memory of found victims when we are not checking
                     if collectVic not in self._foundVictims:
                         if not self._checkingCritCollect and not self._checkingMildCollect and collectVic != self._currentCheckCollect:
                             self._foundVictims.append(collectVic)
                             self._foundVictimLocs[collectVic] = {'room': loc}
                     if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
                         self._foundVictimLocs[collectVic] = {'room': loc}
-                    # Add the victim to the memory of rescued victims when the human's condition is not weak
+                    # Add the victim to the memory of rescued victims when the human's condition is not weak and when we are not checking
                     if condition!='weak' and collectVic not in self._collectedVictims:
                         if not self._checkingCritVic and not self._checkingMildCollect and collectVic != self._currentCheckCollect:
                             self._collectedVictims.append(collectVic)
@@ -1032,18 +1044,13 @@ class BaselineAgent(ArtificialBrain):
 
         # Found critical action
         if 'Found: critically injured' in action:
-            # Check in rescued victims if victim is rescued
-
-            # Only stores location of victim so if victim is found after trust can be decreased
-            # Check in rescued victims if victim is rescued
             if len(action.split()) == 6:
                 foundVic = ' '.join(action.split()[1:4])
             else:
                 foundVic = ' '.join(action.split()[1:5])
             loc = 'area ' + action.split()[-1]
-            # If victim rescued
+            # If victim is already collected change willingness otherwise send robot to the room to check if the victim is there or not
             if foundVic in self._collectedVictims:
-                # TODO: decrease trust
                 self._changeWillingness(False)
             else:
                 self._checkingCritVic = True
@@ -1068,17 +1075,13 @@ class BaselineAgent(ArtificialBrain):
 
         # Found mildly action
         if 'Found: mildly injured' in action:
-
-            # Only stores location of victim so if victim is found after trust can be decreased
-            # Check in rescued victims if victim is rescued
             if len(action.split()) == 6:
                 foundVic = ' '.join(action.split()[1:4])
             else:
                 foundVic = ' '.join(action.split()[1:5])
             loc = 'area ' + action.split()[-1]
-            # If victim rescued
+            # If victim is already collected change willingness otherwise send robot to the room to check if the victim is there or not
             if foundVic in self._collectedVictims:
-                # TODO: decrease trust
                 self._changeWillingness(False)
             else:
                 self._checkingMildVic = True
@@ -1095,11 +1098,6 @@ class BaselineAgent(ArtificialBrain):
                     self._todo.append(self._recentVic)
                 self._waiting = False
                 self._phase = Phase.PLAN_PATH_TO_ROOM
-            # Else:
-
-                # Store location and identity of victim
-                # If identity already exists 
-                    # Decrease trust
             print("Store victim found")
 
         # Pick up mild victim
@@ -1110,10 +1108,11 @@ class BaselineAgent(ArtificialBrain):
             else:
                 collectedVic = ' '.join(action.split()[1:5])
             loc = 'area ' + action.split()[-1]
+            # If victim is already collected change willingness otherwise send robot to the room to check if the victim is there or not
             if collectedVic in self._collectedVictims[0:-1]:
-                # TODO: decrease trust
                 self._changeWillingness(False)
                 self._checkingMildCollect = False
+                print("decreasing trust")
             else:
                 self._currentCheckCollect = collectedVic
                 self._goalVic = collectedVic
@@ -1137,9 +1136,8 @@ class BaselineAgent(ArtificialBrain):
             else:
                 collectedVic = ' '.join(action.split()[1:5])
             loc = 'area ' + action.split()[-1]
-
+            # If victim is already collected change willingness otherwise send robot to the room to check if the victim is there or not
             if collectedVic in self._collectedVictims:
-                # TODO: decrease trust
                 self._changeWillingness(False)
                 self._checkingCritCollect = False
                 print("decreasing trust")
