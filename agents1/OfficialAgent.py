@@ -81,6 +81,7 @@ class BaselineAgent(ArtificialBrain):
         self._checkingMildVic = False
         self._checkingRemove = False
         self._currentCheckVic = ""
+        self._trustBeliefs = {}
         self._currentCheckCollect = ""
         self._checkingMildCollect = False
         self._checkingCritCollect = False
@@ -109,6 +110,7 @@ class BaselineAgent(ArtificialBrain):
         self._processMessages(state, self._teamMembers, self._condition)
         # Initialize and update trust beliefs for team members
         trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
+        self._trustBeliefs = trustBeliefs
         self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages)
 
         # Check whether human is close in distance
@@ -327,7 +329,7 @@ class BaselineAgent(ArtificialBrain):
                     # Check if object blocking is blocking a searched area
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance']:
                         if self._door['room_name'] in self._humanSearchedRooms and self._checkingSearch:
-                            self._changeTrust(False)
+                            self._changeWillingness(False)
                             self._checkingSearch = False
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'rock' in info['obj_id']:
                         objects.append(info)
@@ -484,7 +486,11 @@ class BaselineAgent(ArtificialBrain):
                             # Remember which victim the agent found in this area
                             if vic not in self._roomVics:
                                 self._roomVics.append(vic)
-
+                            
+                            # If victim found in searched area decrease willingness
+                            if vic not in self._foundVictims and self._checkingSearch and (vic[0:7] != "healthy"):
+                                self._changeWillingness(False)
+                                self._checkingSearch = False
 
                             if vic in self._foundVictims and 'location' not in self._foundVictimLocs[vic].keys():
                                 self._recentVic = vic
@@ -495,12 +501,12 @@ class BaselineAgent(ArtificialBrain):
                                     # Communicate which victim was found
                                     self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + ' because you told me ' + vic + ' was located here.','RescueBot')
                                     if self._goalVic == self._currentCheckVic and self._checkingMildVic:
-                                        self._changeTrust(True)
+                                        self._changeWillingness(True)
                                         self._currentCheckVic = ""
                                         self._checkingMildVic = False
                                         print("increasing trust (Mild)")
                                     if self._goalVic == self._currentCheckVic and self._checkingCritVic:
-                                        self._changeTrust(True)
+                                        self._changeWillingness(True)
                                         self._currentCheckVic = ""
                                         self._checkingCritVic = False
                                         print("increasing trust (Crit)")
@@ -563,12 +569,13 @@ class BaselineAgent(ArtificialBrain):
                         self._foundVictimLocs.pop(self._goalVic)
                         self._currentCheckVic = ""
                         self._checkingMildVic = False
-                        self._changeTrust(False)
+                        self._changeWillingness(False)
                         print("Decreasing trust level (Mild)")
                     if self._goalVic == self._currentCheckVic and self._checkingCritVic:
                         self._foundVictims.remove(self._goalVic)
                         self._foundVictimLocs.pop(self._goalVic)
                         self._changeTrust(True)
+                        self._changeWillingness(True)
                         self._currentCheckVic = ""
                         self._checkingCritVic = False
                         print("Decreasing trust (Crit)")
@@ -632,6 +639,11 @@ class BaselineAgent(ArtificialBrain):
                 if not self._waiting and not self._rescue:
                     self._recentVic = None
                     self._phase = Phase.FIND_NEXT_GOAL
+                # Stop checking search
+                if self._checkingSearch:
+                    print("Didn't find anything wrong")
+                    self._changeWillingness(True)
+                self._checkingSearch = False
                 return Idle.__name__, {'duration_in_ticks': 25}
 
             if Phase.PLAN_PATH_TO_VICTIM == self._phase:
@@ -1011,6 +1023,10 @@ class BaselineAgent(ArtificialBrain):
                     self._sendMessage('Moving to ' + str(self._door['room_name']) + ' to check if it has been searched','RescueBot')
                     # Plan the path to the relevant area
                     self._phase = Phase.PLAN_PATH_TO_ROOM
+                else:
+                    # Robot is carrying something so don't check
+                    self._checkingSearch = False
+                    self._changeWillingness(True)
 
                 
             print("Check search:" + " action")
@@ -1029,7 +1045,7 @@ class BaselineAgent(ArtificialBrain):
             # If victim rescued
             if foundVic in self._collectedVictims:
                 # TODO: decrease trust
-                self._changeTrust(False)
+                self._changeWillingness(False)
             else:
                 self._checkingCritVic = True
                 self._currentCheckVic = foundVic
@@ -1064,7 +1080,7 @@ class BaselineAgent(ArtificialBrain):
             # If victim rescued
             if foundVic in self._collectedVictims:
                 # TODO: decrease trust
-                self._changeTrust(False)
+                self._changeWillingness(False)
             else:
                 self._checkingMildVic = True
                 self._currentCheckVic = foundVic
@@ -1144,19 +1160,35 @@ class BaselineAgent(ArtificialBrain):
                 self._phase = Phase.PLAN_PATH_TO_ROOM
             print("Store victim rescued")
         # Help remove
-        if 'Remove: at' in action:
+        if 'Remove:' in action:
+            if not self._carrying:
+                area = 'area ' + action.split()[-1]
+                self._door = state.get_room_doors(area)[0]
+                self._doormat = state.get_room(area)[-1]['doormat']
+                self._phase = Phase.PLAN_PATH_TO_ROOM
             # Not the right obstacle
                 # Decrease trust
             # Else
-                # Increase trust a bit
+                # trust a bit
             print('Help remove')
         return False
 
-    def _changeTrust(self, trustHuman):
-        # TODO: Implement trust change
-        # trustHuman: Boolean whether to increase or decrease trust
-        trust = 0       
-        if not trustHuman:
-            print("HUMAN IS LIAR")
+    def _changeWillingness(self, trust_human):
+        # trust_human: Boolean whether to increase or decrease willingness
+        if trust_human:
+            #self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness + 0.1
+            print("Willingness increased by 0.1")
+        else:
+            #self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness - 0.1
+            print("Willingness decreased by 0.1")
+
+    def _changeCompetence(self, trust_human):
+        # trust_human: Boolean whether to increase or decrease competence
+        if trust_human:
+            #self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence + 0.1
+            print("Competence increased by 0.1")
+        else:
+            #self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence - 0.1
+            print("Competence decreased by 0.1")
 
 

@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="f4119340-1e7e-41b1-a2ad-96776f19413c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="5c5332ac-2412-4133-a7bc-e3ebd03b0431" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/agents1/OfficialAgent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agents1/OfficialAgent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" beforeDir="false" afterPath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
