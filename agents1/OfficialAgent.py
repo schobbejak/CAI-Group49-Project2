@@ -197,18 +197,8 @@ class BaselineAgent(ArtificialBrain):
                     if vic in self._foundVictims and vic in self._todo and len(self._searchedRooms)==0:
                         self._goalVic = vic
                         self._goalLoc = remaining[vic]
-                        # If victim is critical, always rescue together
-                        if 'critical' in vic:
-                            self._rescue = 'together'
-                            self._sendMessage('Moving to ' + self._foundVictimLocs[vic]['room'] + ' to pick up ' + self._goalVic +'. Please come there as well to help me carry ' + self._goalVic + ' to the drop zone.', 'RescueBot')
-                        # If victim is mildly injured, rescue together if human is competent and willing enough
-                        elif 'mild' in vic:
-                            if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
-                                self._rescue = 'alone'
-                                self._sendMessage('Moving to ' + self._foundVictimLocs[vic]['room'] + ' to pick up ' + self._goalVic +'.', 'RescueBot')
-                            else:
-                                self._rescue = 'together'
-                                self._sendMessage('Moving to ' + self._foundVictimLocs[vic]['room'] + ' to pick up ' + self._goalVic +'. Please come there as well to help me carry ' + self._goalVic + ' to the drop zone.', 'RescueBot')
+                        # Move to target victim
+                        self._rescue = 'together'
                         self._sendMessage('Moving to ' + self._foundVictimLocs[vic]['room'] + ' to pick up ' + self._goalVic +'. Please come there as well to help me carry ' + self._goalVic + ' to the drop zone.', 'RescueBot')
                         # Plan path to victim because the exact location is known (i.e., the agent found this victim)
                         if 'location' in self._foundVictimLocs[vic].keys():
@@ -222,18 +212,12 @@ class BaselineAgent(ArtificialBrain):
                     if vic in self._foundVictims and vic not in self._todo:
                         self._goalVic = vic
                         self._goalLoc = remaining[vic]
-                        # If victim is critical, always rescue together
-                        if 'critical' in vic:
+                        # Rescue together when victim is critical or when the human is weak and the victim is mildly injured
+                        if 'critical' in vic or 'mild' in vic and self._condition=='weak':
                             self._rescue = 'together'
-                            self._sendMessage('Moving to ' + self._foundVictimLocs[vic]['room'] + ' to pick up ' + self._goalVic +'. Please come there as well to help me carry ' + self._goalVic + ' to the drop zone.', 'RescueBot')
-                        # If victim is mildly injured, rescue together if human is competent and willing enough
-                        elif 'mild' in vic:
-                            if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
-                                self._rescue = 'alone'
-                                self._sendMessage('Moving to ' + self._foundVictimLocs[vic]['room'] + ' to pick up ' + self._goalVic +'.', 'RescueBot')
-                            else:
-                                self._rescue = 'together'
-                                self._sendMessage('Moving to ' + self._foundVictimLocs[vic]['room'] + ' to pick up ' + self._goalVic +'. Please come there as well to help me carry ' + self._goalVic + ' to the drop zone.', 'RescueBot')
+                        # Rescue alone if the victim is mildly injured and the human not weak
+                        if 'mild' in vic and self._condition!='weak':
+                            self._rescue = 'alone'
                         # Plan path to victim because the exact location is known (i.e., the agent found this victim)
                         if 'location' in self._foundVictimLocs[vic].keys():
                             self._phase = Phase.PLAN_PATH_TO_VICTIM
