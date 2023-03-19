@@ -660,25 +660,23 @@ class BaselineAgent(ArtificialBrain):
                 # Communicate that the agent did not find the target victim in the area while the human previously communicated the victim was located here
                 if self._goalVic in self._foundVictims and self._goalVic not in self._roomVics and self._foundVictimLocs[self._goalVic]['room'] == self._door['room_name']:
                     self._sendMessage(self._goalVic + ' not present in ' + str(self._door['room_name']) + ' because I searched the whole area without finding ' + self._goalVic + '.','RescueBot')
+                    
+                    # Remove the victim location from memory
+                    self._foundVictimLocs.pop(self._goalVic, None)
+                    self._foundVictims.remove(self._goalVic)
+                    self._roomVics = []
+                    
                     # Change trust values if we were checking
                     if self._goalVic == self._currentCheckVic and self._checkingMildVic:
-                        self._foundVictims.remove(self._goalVic)
-                        self._foundVictimLocs.pop(self._goalVic)
                         self._currentCheckVic = ""
                         self._checkingMildVic = False
                         self._changeWillingness(False)
                         print("Decreasing trust level (Mild)")
                     if self._goalVic == self._currentCheckVic and self._checkingCritVic:
-                        self._foundVictims.remove(self._goalVic)
-                        self._foundVictimLocs.pop(self._goalVic)
                         self._changeWillingness(False)
                         self._currentCheckVic = ""
                         self._checkingCritVic = False
                         print("Decreasing trust (Crit)")
-                    # Remove the victim location from memory
-                    self._foundVictimLocs.pop(self._goalVic, None)
-                    self._foundVictims.remove(self._goalVic)
-                    self._roomVics = []
                     # Reset received messages (bug fix)
                     self.received_messages = []
                     self.received_messages_content = []
@@ -863,13 +861,6 @@ class BaselineAgent(ArtificialBrain):
         # Check the content of the received messages
         for mssgs in receivedMessages.values():
             for msg in mssgs:
-                # TODO: Implement prob function for checking action
-                probability = 1
-                checked = False
-                if (random.random() < probability):
-                    self._checkHumanAction(state, msg)
-                    checked = True
-                self.writeChecked(self._folder, msg, self._checkedMessages, checked)
                 # If a received message involves team members searching areas, add these areas to the memory of areas that have been explored
                 if msg.startswith("Search:"):
                     area = 'area ' + msg.split()[-1]
@@ -959,7 +950,14 @@ class BaselineAgent(ArtificialBrain):
                     else:
                         area = 'area ' + msg.split()[-1]
                         self._sendMessage('Will come to ' + area + ' after dropping ' + self._goalVic + '.','RescueBot')
-
+                
+                # TODO: Implement prob function for checking action
+                probability = 1
+                checked = False
+                if (random.random() < probability):
+                    self._checkHumanAction(state, msg)
+                    checked = True
+                self.writeChecked(self._folder, msg, self._checkedMessages, checked)
 
             # Store the current location of the human in memory
             if mssgs and mssgs[-1].split()[-1] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
@@ -1227,46 +1225,7 @@ class BaselineAgent(ArtificialBrain):
                 self._waiting = False
                 self._phase = Phase.PLAN_ROOM_SEARCH_PATH
             print("Store victim rescued")
-
-        if 'Collect: critically injured' in action:
-            self._checkingCritCollect = True
-            if len(action.split()) == 6:
-                collectedVic = ' '.join(action.split()[1:4])
-            else:
-                collectedVic = ' '.join(action.split()[1:5])
-            loc = 'area ' + action.split()[-1]
-            # If victim is already collected change willingness otherwise send robot to the room to check if the victim is there or not
-            if collectedVic in self._collectedVictims:
-                self._changeWillingness(False)
-                self._checkingCritCollect = False
-                print("decreasing trust")
-            else:
-                self._currentCheckCollect = collectedVic
-                self._goalVic = collectedVic
-                self._goalLoc = loc
-                self._door = state.get_room_doors(loc)[0]
-                self._doormat = state.get_room(loc)[-1]['doormat']
-                self.received_messages = []
-                self.received_messages_content = []
-                self._moving = True
-                self._remove = True
-                if self._waiting and self._recentVic:
-                    self._todo.append(self._recentVic)
-                self._waiting = False
-                self._phase = Phase.PLAN_PATH_TO_ROOM
-            print("Store victim rescued")
-        # Help remove
-        if 'Remove:' in action:
-            if not self._carrying:
-                area = 'area ' + action.split()[-1]
-                self._door = state.get_room_doors(area)[0]
-                self._doormat = state.get_room(area)[-1]['doormat']
-                self._phase = Phase.PLAN_PATH_TO_ROOM
-            # Not the right obstacle
-                # Decrease trust
-            # Else
-                # trust a bit
-            print('Help remove')
+        
         return False
 
     def _changeWillingness(self, trust_human):
