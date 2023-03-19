@@ -574,6 +574,18 @@ class BaselineAgent(ArtificialBrain):
                                 # - (!) Weak human must work with RescueBot to carry victim
                                 # - Human can decide whether to rescue together, alone or continue searching
                                 if 'mild' in vic and self._answered == False and not self._waiting:
+                                    
+                                    # If victim is in the room when checking decrease trust
+                                    if self._checkingMildCollect and self._currentCheckCollect == vic:
+                                        self._changeWillingness(False)
+                                        self._checkingMildCollect = False
+                                        self._currentCheckCollect = ""
+                                        print("decrease trust")
+                                    # If victim is already collected decrease trust in agent
+                                    if vic in self._collectedVictims:
+                                        self._changeWillingness(False)
+                                        self._collectedVictims.remove(vic)
+                                    
                                     # If human is not competent or willing enough:
                                     #   - 90% for RescueBot to rescue victim itself
                                     #   - 10% chance to continue instead
@@ -594,35 +606,17 @@ class BaselineAgent(ArtificialBrain):
                                             self._phase = Phase.FIND_NEXT_GOAL
                                             # return Idle.__name__, {'duration_in_ticks': 25}
                                     else:
-                                        # If victim is in the room when checking decrease trust
-                                    if self._checkingMildCollect and self._currentCheckCollect == vic:
-                                        self._changeWillingness(False)
-                                        self._checkingMildCollect = False
-                                        self._currentCheckCollect = ""
-                                        print("decrease trust")
-                                    # If victim is already collected decrease trust in agent
-                                    if vic in self._collectedVictims:
-                                        self._changeWillingness(False)
-                                        self._collectedVictims.remove(vic)
-                                    self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue together", "Rescue alone", or "Continue" searching. \n \n \
+                                        self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue together", "Rescue alone", or "Continue" searching. \n \n \
                                             Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + '\n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + '\n \
                                             clock - extra time when rescuing alone: 15 seconds \n afstand - distance between us: ' + self._distanceHuman,'RescueBot')
                                         self._waiting = True
-
+                                    
                                 # Critically injured case:
                                 # - (!) Human must work with RescueBot to carry victim
                                 # - Human can decide whether to rescue together, or continue searching
                                 if 'critical' in vic and self._answered == False and not self._waiting:
-                                    # If human is not competent or willing enough, decide to continue instead
-                                    if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
-                                        self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'], 'RescueBot')
-                                        self._answered = True
-                                        self._waiting = False
-                                        self._todo.append(self._recentVic)
-                                        self._recentVic = None
-                                        self._phase = Phase.FIND_NEXT_GOAL
-                                    else:
-                                        # If victim is in the room decrease trust
+
+                                    # If victim is in the room decrease trust
                                     if self._checkingCritCollect and self._currentCheckCollect == vic:
                                         self._changeWillingness(False)
                                         self._checkingCritCollect = False
@@ -632,7 +626,17 @@ class BaselineAgent(ArtificialBrain):
                                     if vic in self._collectedVictims:
                                         self._changeWillingness(False)
                                         self._collectedVictims.remove(vic)
-                                    self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue" or "Continue" searching. \n\n \
+
+                                    # If human is not competent or willing enough, decide to continue instead
+                                    if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
+                                        self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'], 'RescueBot')
+                                        self._answered = True
+                                        self._waiting = False
+                                        self._todo.append(self._recentVic)
+                                        self._recentVic = None
+                                        self._phase = Phase.FIND_NEXT_GOAL
+                                    else:
+                                        self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue" or "Continue" searching. \n\n \
                                             Important features to consider are: \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \n safe - victims rescued: ' + str(self._collectedVictims) + '\n \
                                             afstand - distance between us: ' + self._distanceHuman,'RescueBot')
                                         self._waiting = True    
