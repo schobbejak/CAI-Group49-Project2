@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f4119340-1e7e-41b1-a2ad-96776f19413c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/agents1/OfficialAgent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agents1/OfficialAgent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" beforeDir="false" afterPath="$PROJECT_DIR$/beliefs/currentTrustBelief.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,7 +64,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1678613631860</updated>
-      <workItem from="1678613633285" duration="34864000" />
+      <workItem from="1678613633285" duration="35244000" />
     </task>
     <servers />
   </component>
@@ -74,6 +72,6 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/CAI_Group49_Project2$main.coverage" NAME="main Coverage Results" MODIFIED="1679308236552" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/CAI_Group49_Project2$main.coverage" NAME="main Coverage Results" MODIFIED="1679308541437" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

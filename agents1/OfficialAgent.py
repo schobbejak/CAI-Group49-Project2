@@ -84,7 +84,6 @@ class BaselineAgent(ArtificialBrain):
         self._trustBeliefs = {}
         self._currentCheckCollect = ""
         self._checkingMildCollect = False
-        self._checkingCritCollect = False
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -635,12 +634,6 @@ class BaselineAgent(ArtificialBrain):
                                 # - Human can decide whether to rescue together, or continue searching
                                 if 'critical' in vic and self._answered == False and not self._waiting:
 
-                                    # If victim is in the room decrease trust
-                                    if self._checkingCritCollect and self._currentCheckCollect == vic:
-                                        self._changeWillingness(False)
-                                        self._checkingCritCollect = False
-                                        self._currentCheckCollect = ""
-                                        print("decrease trust")
                                     # If victim is already collected decrease trust in agent
                                     if vic in self._collectedVictims:
                                         self._changeWillingness(False)
@@ -667,13 +660,6 @@ class BaselineAgent(ArtificialBrain):
                     self._collectedVictims.append(self._goalVic)
                     self._changeWillingness(True)
                     self._checkingMildCollect = False
-                    self._currentCheckVic = ""
-                    print("increase trust")
-                if self._checkingCritCollect and self._goalVic not in self._roomVics:
-                    self._foundVictims.append(self._goalVic)
-                    self._collectedVictims.append(self._goalVic)
-                    self._changeWillingness(True)
-                    self._checkingCritCollect = False
                     self._currentCheckVic = ""
                     print("increase trust")
                 # Communicate that the agent did not find the target victim in the area while the human previously communicated the victim was located here
@@ -967,7 +953,7 @@ class BaselineAgent(ArtificialBrain):
                         self._searchedRooms.append(loc)
                     # Add the victim and location to the memory of found victims when we are not checking
                     if collectVic not in self._foundVictims:
-                        if not self._checkingCritCollect and not self._checkingMildCollect and collectVic != self._currentCheckCollect:
+                        if not self._checkingMildCollect and collectVic != self._currentCheckCollect:
                             self._foundVictims.append(collectVic)
                             self._foundVictimLocs[collectVic] = {'room': loc}
                     if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
