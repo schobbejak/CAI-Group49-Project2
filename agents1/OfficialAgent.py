@@ -85,6 +85,8 @@ class BaselineAgent(ArtificialBrain):
         self._currentCheckCollect = ""
         self._checkingMildCollect = False
         self._checkingCritCollect = False
+        self._lieFactor = 1
+        self._beliefsLoaded = False
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -109,9 +111,10 @@ class BaselineAgent(ArtificialBrain):
         # Process messages from team members
         self._processMessages(state, self._teamMembers, self._condition)
         # Initialize and update trust beliefs for team members
-        trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
-        self._trustBeliefs = trustBeliefs
-        self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages)
+        if not self._beliefsLoaded:
+            trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
+            self._trustBeliefs = trustBeliefs
+            self._beliefsLoaded = True
 
         # Check whether human is close in distance
         # state[{is_human_agent: True}] checks if the human is in view of the rescuebot
@@ -154,8 +157,8 @@ class BaselineAgent(ArtificialBrain):
         # Ongoing loop untill the task is terminated, using different phases for defining the agent's behavior
         while True:
             # Get the competence and willigness values of the human agent
-            human_competence = trustBeliefs[self._teamMembers[-1]]['competence']
-            human_willingness = trustBeliefs[self._teamMembers[-1]]['willingness']
+            human_competence = self._trustBeliefs[self._teamMembers[-1]]['competence']
+            human_willingness = self._trustBeliefs[self._teamMembers[-1]]['willingness']
 
             if Phase.INTRO == self._phase:
                 # Send introduction message
@@ -953,11 +956,8 @@ class BaselineAgent(ArtificialBrain):
                 
                 # TODO: Implement prob function for checking action
                 probability = 1
-                checked = False
                 if (random.random() < probability):
                     self._checkHumanAction(state, msg)
-                    checked = True
-                self.writeChecked(self._folder, msg, self._checkedMessages, checked)
 
             # Store the current location of the human in memory
             if mssgs and mssgs[-1].split()[-1] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
@@ -971,6 +971,7 @@ class BaselineAgent(ArtificialBrain):
         trustBeliefs = {}
         # Set a default starting trust value
         default = 0.5
+        print("Set default")
         trustfile_header = []
         trustfile_contents = []
         # Check if agent already collaborated with this human before, if yes: load the corresponding trust values, if no: initialize using default trust values
@@ -991,29 +992,6 @@ class BaselineAgent(ArtificialBrain):
                     competence = default
                     willingness = default
                     trustBeliefs[self._humanName] = {'competence': competence, 'willingness': willingness}
-        return trustBeliefs
-
-    def _trustBelief(self, members, trustBeliefs, folder, receivedMessages):
-        '''
-        Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
-        '''
-        # Update the trust value based on for example the received messages
-        # Load the messages to see which have been checked
-        # Check last one based on probability function and add to csv file
-
-
-        for message in receivedMessages:
-            # Increase agent trust in a team member that rescued a victim
-            if 'Collect' in message:
-                trustBeliefs[self._humanName]['competence']+=0.10
-                # Restrict the competence belief to a range of -1 to 1
-                trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1, 1)
-        # Save current trust belief values so we can later use and retrieve them to add to a csv file with all the logged trust belief values
-        with open(folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
-            csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csv_writer.writerow(['name','competence','willingness'])
-            csv_writer.writerow([self._humanName,trustBeliefs[self._humanName]['competence'],trustBeliefs[self._humanName]['willingness']])
-
         return trustBeliefs
     
     def _isWillingEnough(self, willingness):
@@ -1077,26 +1055,6 @@ class BaselineAgent(ArtificialBrain):
             else:
                 locs.append((x[i], max(y)))
         return locs
-
-    def writeChecked(self, folder, message, allMessages, checked):
-        #with open(folder + '/beliefs/checkedMessages.csv', mode='a') as csv_file:
-        #    csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        #    csv_writer.writerow([len(allMessages), message, checked, done])
-        self._checkedMessages.append({"message": message, "checked": checked})
-
-
-    def loadChecked(self, folder):
-        checkedMessages = {}
-        with open(folder + '/beliefs/checkedMessages.csv') as csvfile:
-            reader = csv.reader(csvfile, delimiter=';', quotechar="'")
-            for row in reader:
-                # Retrieve trust values
-                id = float(row[0])
-                message = row[1]
-                checked = bool(row[2])
-                done = bool(row[3])
-                checkedMessages[id] = {'message': message, 'checked': checked, 'done': done}
-        return checkedMessages
 
     def _checkHumanAction(self, state, action):
         # This function should only check unprocessed messages
@@ -1231,19 +1189,39 @@ class BaselineAgent(ArtificialBrain):
     def _changeWillingness(self, trust_human):
         # trust_human: Boolean whether to increase or decrease willingness
         if trust_human:
-            #self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness + 0.1
-            print("Willingness increased by 0.1")
+            self._trustBeliefs[self._teamMembers[-1]]['willingness'] = self._trustBeliefs[self._teamMembers[-1]]['willingness'] + (0.1 * self._lieFactor)
+            if self._trustBeliefs[self._teamMembers[-1]]['willingness'] > 1:
+                self._trustBeliefs[self._teamMembers[-1]]['willingness'] = 1
+            self._lieFactor *= 1.1
+            print("Willingness increased by " + str((0.1 * self._lieFactor)))
         else:
-            #self._trustBeliefs[self._humanName].willingness = self._trustBeliefs[self._humanName].willingness - 0.1
+            self._trustBeliefs[self._teamMembers[-1]]['willingness'] = self._trustBeliefs[self._teamMembers[-1]]['willingness'] - 0.1
+            if self._trustBeliefs[self._teamMembers[-1]]['willingness'] < -1:
+                self._trustBeliefs[self._teamMembers[-1]]['willingness'] = -1
+            self._lieFactor /= 2
             print("Willingness decreased by 0.1")
 
-    def _changeCompetence(self, trust_human):
-        # trust_human: Boolean whether to increase or decrease competence
-        if trust_human:
-            #self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence + 0.1
+        with open(self._folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
+            csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerow(['name','competence','willingness'])
+            csv_writer.writerow([self._humanName,self._trustBeliefs[self._teamMembers[-1]]['competence'],self._trustBeliefs[self._teamMembers[-1]]['willingness']])
+
+    def _changeCompetence(self, human_is_competent):
+        # human_is_competent: Boolean whether to increase or decrease competence
+        if human_is_competent:
+            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] + 0.1
+            if self._trustBeliefs[self._teamMembers[-1]]['competence'] > 1:
+                self._trustBeliefs[self._teamMembers[-1]]['competence'] = 1
             print("Competence increased by 0.1")
         else:
-            #self._trustBeliefs[self._humanName].competence = self._trustBeliefs[self._humanName].competence - 0.1
+            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] - 0.1
+            if self._trustBeliefs[self._teamMembers[-1]]['competence'] < -1:
+                self._trustBeliefs[self._teamMembers[-1]]['competence'] = -1
             print("Competence decreased by 0.1")
+
+        with open(self._folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
+            csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerow(['name','competence','willingness'])
+            csv_writer.writerow([self._humanName,self._trustBeliefs[self._teamMembers[-1]]['competence'],self._trustBeliefs[self._teamMembers[-1]]['willingness']])
 
 
