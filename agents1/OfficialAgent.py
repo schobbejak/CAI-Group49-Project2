@@ -766,9 +766,11 @@ class BaselineAgent(ArtificialBrain):
                     # Decide to help the human carry a found victim when the human's condition is 'weak'
                     if condition=='weak':
                         self._rescue = 'together'
+                        self._changeCompetence(False)
                     # Add the found victim to the to do list when the human's condition is not 'weak'
                     if 'mild' in foundVic and condition!='weak':
                         self._todo.append(foundVic)
+                        self._changeCompetence(True)
                 # If a received message involves team members rescuing victims, add these victims and their locations to memory
                 if msg.startswith('Collect:'):
                     # Identify which victim and area it concerns
@@ -789,11 +791,14 @@ class BaselineAgent(ArtificialBrain):
                     # Add the victim to the memory of rescued victims when the human's condition is not weak
                     if condition!='weak' and collectVic not in self._collectedVictims:
                         self._collectedVictims.append(collectVic)
+                        self._changeCompetence(True)
                     # Decide to help the human carry the victim together when the human's condition is weak
                     if condition=='weak':
                         self._rescue = 'together'
+                        self._changeCompetence(False)
                 # If a received message involves team members asking for help with removing obstacles, add their location to memory and come over
                 if msg.startswith('Remove:'):
+                    self._changeCompetence(False)
                     # Come over immediately when the agent is not carrying a victim
                     if not self._carrying:
                         # Identify at which location the human needs help
@@ -1069,18 +1074,18 @@ class BaselineAgent(ArtificialBrain):
                 # If victim is come across later decrease trust of human
             print("Store victim rescued")
 
-        # Help remove
-        if 'Remove:' in action:
-            if not self._carrying:
-                area = 'area ' + action.split()[-1]
-                self._door = state.get_room_doors(area)[0]
-                self._doormat = state.get_room(area)[-1]['doormat']
-                self._phase = Phase.PLAN_PATH_TO_ROOM
-            # Not the right obstacle
-                # Decrease trust
-            # Else
-                # trust a bit
-            print('Help remove')
+        # # Help remove
+        # if 'Remove:' in action:
+        #     if not self._carrying:
+        #         area = 'area ' + action.split()[-1]
+        #         self._door = state.get_room_doors(area)[0]
+        #         self._doormat = state.get_room(area)[-1]['doormat']
+        #         self._phase = Phase.PLAN_PATH_TO_ROOM
+        #     # Not the right obstacle
+        #         # Decrease trust
+        #     # Else
+        #         # trust a bit
+        #     print('Help remove')
         return False
 
     def _changeWillingness(self, trust_human):
