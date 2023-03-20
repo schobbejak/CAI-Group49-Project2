@@ -340,17 +340,24 @@ class BaselineAgent(ArtificialBrain):
                         if self._door['room_name'] in self._humanSearchedRooms and self._checkingSearch:
                             self._changeWillingness(False)
                             self._checkingSearch = False
+                        if self._checkingMildCollect:
+                            self._changeWillingness(False)
+                            self._checkingMildCollect = False
+                            self._currentCheckCollect = ""
+                        if self._checkingMildVic and self._goalLoc == self._door['room_name']:
+                            self._changeWillingness(False)
+                            self._checkingMildVic = False
+                            self._currentCheckVic = ""
+                        if self._checkingCritVic and self._goalLoc == self._door['room_name']:
+                            self._changeWillingness(False)
+                            self._checkingCritVic = False
+                            self._currentCheckVic = ""
 
                     # Big rock case:
                     # - RescueBot must work with human to remove big rock
                     # - Human can decide whether to remove it or continue searching
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'rock' in info['obj_id']:
                         objects.append(info)
-                        if self._checkingMildCollect and self._currentCheckCollect == self._goalVic:
-                            self._changeWillingness(False)
-                            self._checkingMildCollect = False
-                            self._currentCheckCollect = ""
-                            print("decrease trust")
                         # Communicate which obstacle is blocking the entrance
                         if self._answered == False and not self._remove and not self._waiting:    
                             # If human is not willing or competent enough to help remove the big rock, decide to continue instead
@@ -394,11 +401,6 @@ class BaselineAgent(ArtificialBrain):
                     # - Human can decide whether to remove it or continue searching
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info['obj_id']:
                         objects.append(info)
-                        if self._checkingMildCollect and self._currentCheckCollect == self._goalVic:
-                            self._changeWillingness(False)
-                            self._checkingMildCollect = False
-                            self._currentCheckCollect = ""
-                            print("decrease trust")
                         # Communicate which obstacle is blocking the entrance
                         if self._answered == False and not self._remove and not self._waiting:
                             self._sendMessage('Found tree blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove" or "Continue" searching. \n \n \
@@ -433,11 +435,6 @@ class BaselineAgent(ArtificialBrain):
                     # - (!) A weak human cannot remove the small stone alone
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'stone' in info['obj_id']:
                         objects.append(info)
-                        if self._checkingMildCollect and self._currentCheckCollect == self._goalVic:
-                            self._changeWillingness(False)
-                            self._checkingMildCollect = False
-                            self._currentCheckCollect = ""
-                            print("decrease trust")
                         # Communicate which obstacle is blocking the entrance
                         if self._answered == False and not self._remove and not self._waiting:
                             # If human is not willing or competent enough to help remove the small stone:
