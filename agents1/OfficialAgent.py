@@ -631,11 +631,6 @@ class BaselineAgent(ArtificialBrain):
                                 # - Human can decide whether to rescue together, or continue searching
                                 if 'critical' in vic and self._answered == False and not self._waiting:
 
-                                    # If victim is already collected decrease trust in agent
-                                    if vic in self._collectedVictims:
-                                        self._changeWillingness(False)
-                                        self._collectedVictims.remove(vic)
-
                                     # If human is not competent or willing enough, decide to continue instead
                                     if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
                                         # self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'], 'RescueBot')
