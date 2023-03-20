@@ -664,7 +664,7 @@ class BaselineAgent(ArtificialBrain):
                     self._currentCheckVic = ""
                     print("increase trust")
                 # Communicate that the agent did not find the target victim in the area while the human previously communicated the victim was located here
-                if self._goalVic in self._foundVictims and self._goalVic not in self._roomVics and self._foundVictimLocs[self._goalVic]['room'] == self._door['room_name']:
+                if self._goalVic in self._foundVictims:
                     self._sendMessage(self._goalVic + ' not present in ' + str(self._door['room_name']) + ' because I searched the whole area without finding ' + self._goalVic + '.','RescueBot')
                     
                     # Remove the victim location from memory
@@ -1222,12 +1222,12 @@ class BaselineAgent(ArtificialBrain):
     def _changeCompetence(self, human_is_competent):
         # human_is_competent: Boolean whether to increase or decrease competence
         if human_is_competent:
-            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] + 0.25
+            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] + 0.3
             if self._trustBeliefs[self._teamMembers[-1]]['competence'] > 1:
                 self._trustBeliefs[self._teamMembers[-1]]['competence'] = 1
             print("Competence increased by 0.2")
         else:
-            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] - 0.05
+            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] - 0.1
             if self._trustBeliefs[self._teamMembers[-1]]['competence'] < -1:
                 self._trustBeliefs[self._teamMembers[-1]]['competence'] = -1
             print("Competence decreased by 0.05")
