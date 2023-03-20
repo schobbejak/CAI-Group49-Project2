@@ -86,6 +86,7 @@ class BaselineAgent(ArtificialBrain):
         self._checkingMildCollect = False
         self._lieFactor = 1
         self._beliefsLoaded = False
+        self._decreasedCompetenceCarryTogether = False
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -146,8 +147,12 @@ class BaselineAgent(ArtificialBrain):
                 self._carryingTogether = True
             if 'is_human_agent' in info and self._humanName in info['name'] and len(info['is_carrying']) == 0:
                 self._carryingTogether = False
-        # If carrying a victim together, let agent be idle (because joint actions are essentially carried out by the human)
+                self._decreasedCompetenceCarryTogether = False
+        # If carrying a victim together, let agent be idle (because joint actions are essentially carried out by the human). Also decrease competence as human didn't carry victim alone
         if self._carryingTogether == True:
+            if not self._decreasedCompetenceCarryTogether:
+                self._changeCompetence(False)
+                self._decreasedCompetenceCarryTogether = True
             return None, {}
 
         # Send the hidden score message for displaying and logging the score during the task, DO NOT REMOVE THIS
@@ -649,11 +654,12 @@ class BaselineAgent(ArtificialBrain):
                                         self._waiting = True    
                     # Execute move actions to explore the area
                     return action, {}
-                # If victim is not in the room when checking increase trust
+                # If victim is not in the room when checking increase willingness. Also increase competence as human can rescue mildly injured victimo
                 if self._checkingMildCollect and self._goalVic not in self._roomVics:
                     self._foundVictims.append(self._goalVic)
                     self._collectedVictims.append(self._goalVic)
                     self._changeWillingness(True)
+                    self._changeCompetence(True)
                     self._checkingMildCollect = False
                     self._currentCheckVic = ""
                     print("increase trust")
@@ -896,40 +902,16 @@ class BaselineAgent(ArtificialBrain):
                     # Decide to help the human carry a found victim when the human's condition is 'weak'
                     if condition=='weak':
                         self._rescue = 'together'
-                        self._changeCompetence(False)
+                    elif 'critically' in foundVic:
+                        self._rescue = 'together'
                     # Add the found victim to the to do list when the human's condition is not 'weak'
                     if 'mild' in foundVic and condition!='weak':
                         self._todo.append(foundVic)
-                        self._changeCompetence(True)
-                # If a received message involves team members rescuing victims, add these victims and their locations to memory
-                if msg.startswith('Collect:'):
-                    # Identify which victim and area it concerns
-                    if len(msg.split()) == 6:
-                        collectVic = ' '.join(msg.split()[1:4])
-                    else:
-                        collectVic = ' '.join(msg.split()[1:5])
-                    loc = 'area ' + msg.split()[-1]
-                    # Add the area to the memory of searched areas
-                    if loc not in self._searchedRooms:
-                        self._searchedRooms.append(loc)
-                    # Add the victim and location to the memory of found victims
-                    if collectVic not in self._foundVictims:
-                        self._foundVictims.append(collectVic)
-                        self._foundVictimLocs[collectVic] = {'room': loc}
-                    if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
-                        self._foundVictimLocs[collectVic] = {'room': loc}
-                    # Add the victim to the memory of rescued victims when the human's condition is not weak
-                    if condition!='weak' and collectVic not in self._collectedVictims:
-                        self._collectedVictims.append(collectVic)
-                        self._changeCompetence(True)
-                    # Decide to help the human carry the victim together when the human's condition is weak
-                    if condition=='weak':
-                        self._rescue = 'together'
-                        self._changeCompetence(False)
+
                 # If a received message involves team members asking for help with removing obstacles, add their location to memory and come over
                 if msg.startswith('Remove:'):
-                    self._changeCompetence(False)
                     # Come over immediately when the agent is not carrying a victim
+                    self._changeCompetence(False)
                     if not self._carrying:
                         # Identify at which location the human needs help
                         area = 'area ' + msg.split()[-1]
@@ -1191,9 +1173,10 @@ class BaselineAgent(ArtificialBrain):
             else:
                 collectedVic = ' '.join(action.split()[1:5])
             loc = 'area ' + action.split()[-1]
-            # If victim is already collected change willingness otherwise send robot to the room to check if the victim is there or not
+            # If victim is already collected change willingness and competence otherwise send robot to the room to check if the victim is there or not
             if collectedVic in self._collectedVictims[0:-1]:
                 self._changeWillingness(False)
+                self._changeCompetence(False)
                 self._checkingMildCollect = False
                 print("decreasing trust")
             else:
@@ -1239,15 +1222,15 @@ class BaselineAgent(ArtificialBrain):
     def _changeCompetence(self, human_is_competent):
         # human_is_competent: Boolean whether to increase or decrease competence
         if human_is_competent:
-            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] + 0.1
+            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] + 0.25
             if self._trustBeliefs[self._teamMembers[-1]]['competence'] > 1:
                 self._trustBeliefs[self._teamMembers[-1]]['competence'] = 1
-            print("Competence increased by 0.1")
+            print("Competence increased by 0.2")
         else:
-            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] - 0.1
+            self._trustBeliefs[self._teamMembers[-1]]['competence'] = self._trustBeliefs[self._teamMembers[-1]]['competence'] - 0.05
             if self._trustBeliefs[self._teamMembers[-1]]['competence'] < -1:
                 self._trustBeliefs[self._teamMembers[-1]]['competence'] = -1
-            print("Competence decreased by 0.1")
+            print("Competence decreased by 0.05")
 
         with open(self._folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
