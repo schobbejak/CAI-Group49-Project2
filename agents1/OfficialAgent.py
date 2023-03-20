@@ -356,7 +356,7 @@ class BaselineAgent(ArtificialBrain):
                         if self._answered == False and not self._remove and not self._waiting:    
                             # If human is not willing or competent enough to help remove the big rock, decide to continue instead
                             if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
-                                self._sendMessage('Found rock blocking ' + str(self._door['room_name']), 'RescueBot')
+                                # self._sendMessage('Found rock blocking ' + str(self._door['room_name']), 'RescueBot')
                                 self._answered = True
                                 self._waiting = False
                                 self._tosearch.append(self._door['room_name'])
@@ -454,7 +454,7 @@ class BaselineAgent(ArtificialBrain):
                                     self._remove = False
                                     return RemoveObject.__name__, {'object_id': info['obj_id']}
                                 else:
-                                    self._sendMessage('Found stones blocking  ' + str(self._door['room_name']), 'RescueBot')
+                                    # self._sendMessage('Found stones blocking  ' + str(self._door['room_name']), 'RescueBot')
                                     self._tosearch.append(self._door['room_name'])
                                     self._phase = Phase.FIND_NEXT_GOAL
                                     return None, {}
@@ -619,7 +619,7 @@ class BaselineAgent(ArtificialBrain):
                                             self._phase = Phase.FIND_NEXT_GOAL
                                             # return Idle.__name__, {'duration_in_ticks': 25}
                                         else:
-                                            self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'], 'RescueBot')
+                                            # self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'], 'RescueBot')
                                             self._todo.append(self._recentVic)
                                             self._recentVic = None
                                             self._phase = Phase.FIND_NEXT_GOAL
@@ -648,7 +648,7 @@ class BaselineAgent(ArtificialBrain):
 
                                     # If human is not competent or willing enough, decide to continue instead
                                     if not (self._isCompetentEnough(human_competence) and self._isWillingEnough(human_willingness)):
-                                        self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'], 'RescueBot')
+                                        # self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'], 'RescueBot')
                                         self._answered = True
                                         self._waiting = False
                                         self._todo.append(self._recentVic)
