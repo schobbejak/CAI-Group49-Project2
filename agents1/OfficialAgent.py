@@ -927,8 +927,8 @@ class BaselineAgent(ArtificialBrain):
                         area = 'area ' + msg.split()[-1]
                         self._sendMessage('Will come to ' + area + ' after dropping ' + self._goalVic + '.','RescueBot')
                 
-                # TODO: Implement prob function for checking action
-                probability = 1
+                # Implement prob function for checking action
+                probability = 0.5
                 if (random.random() < probability):
                     self._checkHumanAction(state, msg)
 
