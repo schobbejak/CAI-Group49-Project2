@@ -84,7 +84,6 @@ class BaselineAgent(ArtificialBrain):
         self._trustBeliefs = {}
         self._currentCheckCollect = ""
         self._checkingMildCollect = False
-        self._checkingCritCollect = False
         self._lieFactor = 1
         self._beliefsLoaded = False
 
@@ -294,14 +293,18 @@ class BaselineAgent(ArtificialBrain):
             if Phase.FOLLOW_PATH_TO_ROOM == self._phase:
                 # Find the next victim to rescue if the previously identified target victim was rescued by the human
                 if self._goalVic and self._goalVic in self._collectedVictims:
+                    print("checking1")
                     self._currentDoor = None
                     self._phase = Phase.FIND_NEXT_GOAL
                 # Identify which area to move to because the human found the previously identified target victim
                 if self._goalVic and self._goalVic in self._foundVictims and self._door['room_name'] != self._foundVictimLocs[self._goalVic]['room']:
+                    print("checking2")
                     self._currentDoor = None
                     self._phase = Phase.FIND_NEXT_GOAL
                 # Identify the next area to search if the human already searched the previously identified area
                 if self._door['room_name'] in self._searchedRooms and self._goalVic not in self._foundVictims:
+                    print(self._goalVic not in self._foundVictims)
+                    print(self._door['room_name'] in self._searchedRooms)
                     self._currentDoor = None
                     self._phase = Phase.FIND_NEXT_GOAL
                 # Otherwise move to the next area to search
@@ -340,6 +343,18 @@ class BaselineAgent(ArtificialBrain):
                         if self._door['room_name'] in self._humanSearchedRooms and self._checkingSearch:
                             self._changeWillingness(False)
                             self._checkingSearch = False
+                        if self._checkingMildCollect:
+                            self._changeWillingness(False)
+                            self._checkingMildCollect = False
+                            self._currentCheckCollect = ""
+                        if self._checkingMildVic and self._goalLoc == self._door['room_name']:
+                            self._changeWillingness(False)
+                            self._checkingMildVic = False
+                            self._currentCheckVic = ""
+                        if self._checkingCritVic and self._goalLoc == self._door['room_name']:
+                            self._changeWillingness(False)
+                            self._checkingCritVic = False
+                            self._currentCheckVic = ""
 
                     # Big rock case:
                     # - RescueBot must work with human to remove big rock
@@ -619,12 +634,6 @@ class BaselineAgent(ArtificialBrain):
                                 # - Human can decide whether to rescue together, or continue searching
                                 if 'critical' in vic and self._answered == False and not self._waiting:
 
-                                    # If victim is in the room decrease trust
-                                    if self._checkingCritCollect and self._currentCheckCollect == vic:
-                                        self._changeWillingness(False)
-                                        self._checkingCritCollect = False
-                                        self._currentCheckCollect = ""
-                                        print("decrease trust")
                                     # If victim is already collected decrease trust in agent
                                     if vic in self._collectedVictims:
                                         self._changeWillingness(False)
@@ -651,13 +660,6 @@ class BaselineAgent(ArtificialBrain):
                     self._collectedVictims.append(self._goalVic)
                     self._changeWillingness(True)
                     self._checkingMildCollect = False
-                    self._currentCheckVic = ""
-                    print("increase trust")
-                if self._checkingCritCollect and self._goalVic not in self._roomVics:
-                    self._foundVictims.append(self._goalVic)
-                    self._collectedVictims.append(self._goalVic)
-                    self._changeWillingness(True)
-                    self._checkingCritCollect = False
                     self._currentCheckVic = ""
                     print("increase trust")
                 # Communicate that the agent did not find the target victim in the area while the human previously communicated the victim was located here
@@ -902,31 +904,7 @@ class BaselineAgent(ArtificialBrain):
                     # Add the found victim to the to do list when the human's condition is not 'weak'
                     if 'mild' in foundVic and condition!='weak':
                         self._todo.append(foundVic)
-                # If a received message involves team members rescuing victims, add these victims and their locations to memory
-                if msg.startswith('Collect:'):
-                    # Identify which victim and area it concerns
-                    if len(msg.split()) == 6:
-                        collectVic = ' '.join(msg.split()[1:4])
-                    else:
-                        collectVic = ' '.join(msg.split()[1:5])
-                    loc = 'area ' + msg.split()[-1]
-                    # Add the area to the memory of searched areas
-                    if loc not in self._searchedRooms:
-                        self._searchedRooms.append(loc)
-                    # Add the victim and location to the memory of found victims when we are not checking
-                    if collectVic not in self._foundVictims:
-                        if not self._checkingCritCollect and not self._checkingMildCollect and collectVic != self._currentCheckCollect:
-                            self._foundVictims.append(collectVic)
-                            self._foundVictimLocs[collectVic] = {'room': loc}
-                    if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
-                        self._foundVictimLocs[collectVic] = {'room': loc}
-                    # Add the victim to the memory of rescued victims when the human's condition is not weak and when we are not checking
-                    if condition!='weak' and collectVic not in self._collectedVictims:
-                        if not self._checkingCritVic and not self._checkingMildCollect and collectVic != self._currentCheckCollect:
-                            self._collectedVictims.append(collectVic)
-                    # Decide to help the human carry the victim together when the human's condition is weak
-                    if condition=='weak':
-                        self._rescue = 'together'
+
                 # If a received message involves team members asking for help with removing obstacles, add their location to memory and come over
                 if msg.startswith('Remove:'):
                     # Come over immediately when the agent is not carrying a victim
@@ -958,6 +936,32 @@ class BaselineAgent(ArtificialBrain):
                 probability = 1
                 if (random.random() < probability):
                     self._checkHumanAction(state, msg)
+
+                # If a received message involves team members rescuing victims, add these victims and their locations to memory
+                if msg.startswith('Collect:'):
+                    # Identify which victim and area it concerns
+                    if len(msg.split()) == 6:
+                        collectVic = ' '.join(msg.split()[1:4])
+                    else:
+                        collectVic = ' '.join(msg.split()[1:5])
+                    loc = 'area ' + msg.split()[-1]
+                    # Add the area to the memory of searched areas
+                    if loc not in self._searchedRooms and not self._checkingMildCollect:
+                        self._searchedRooms.append(loc)
+                    # Add the victim and location to the memory of found victims when we are not checking
+                    if collectVic not in self._foundVictims:
+                        if not self._checkingMildCollect and collectVic != self._currentCheckCollect:
+                            self._foundVictims.append(collectVic)
+                            self._foundVictimLocs[collectVic] = {'room': loc}
+                    if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
+                        self._foundVictimLocs[collectVic] = {'room': loc}
+                    # Add the victim to the memory of rescued victims when the human's condition is not weak and when we are not checking
+                    if condition != 'weak' and collectVic not in self._collectedVictims:
+                        if not self._checkingCritVic and not self._checkingMildCollect and collectVic != self._currentCheckCollect:
+                            self._collectedVictims.append(collectVic)
+                    # Decide to help the human carry the victim together when the human's condition is weak
+                    if condition == 'weak':
+                        self._rescue = 'together'
 
             # Store the current location of the human in memory
             if mssgs and mssgs[-1].split()[-1] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
@@ -1114,6 +1118,8 @@ class BaselineAgent(ArtificialBrain):
                 self._goalLoc = loc
                 self._door = state.get_room_doors(loc)[0]
                 self._doormat = state.get_room(loc)[-1]['doormat']
+                if loc in self._searchedRooms:
+                    self._searchedRooms.remove(loc)
                 self.received_messages = []
                 self.received_messages_content = []
                 self._moving = True
@@ -1145,6 +1151,8 @@ class BaselineAgent(ArtificialBrain):
                 self._goalLoc = loc
                 self._door = state.get_room_doors(loc)[0]
                 self._doormat = state.get_room(loc)[-1]['doormat']
+                if loc in self._searchedRooms:
+                    self._searchedRooms.remove(loc)
                 self.received_messages = []
                 self.received_messages_content = []
                 self._moving = True
@@ -1174,6 +1182,8 @@ class BaselineAgent(ArtificialBrain):
                 self._goalLoc = loc
                 self._door = state.get_room_doors(loc)[0]
                 self._doormat = state.get_room(loc)[-1]['doormat']
+                if loc in self._searchedRooms:
+                    self._searchedRooms.remove(loc)
                 self.received_messages = []
                 self.received_messages_content = []
                 self._moving = True
@@ -1181,7 +1191,7 @@ class BaselineAgent(ArtificialBrain):
                 if self._waiting and self._recentVic:
                     self._todo.append(self._recentVic)
                 self._waiting = False
-                self._phase = Phase.PLAN_ROOM_SEARCH_PATH
+                self._phase = Phase.PLAN_PATH_TO_ROOM
             print("Store victim rescued")
         
         return False
