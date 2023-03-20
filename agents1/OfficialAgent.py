@@ -1084,8 +1084,6 @@ class BaselineAgent(ArtificialBrain):
                     if self._waiting and self._recentVic:
                         self._todo.append(self._recentVic)
                     self._waiting = False
-                    # Let the human know that the agent is coming over to help
-                    self._sendMessage('Moving to ' + str(self._door['room_name']) + ' to check if it has been searched','RescueBot')
                     # Plan the path to the relevant area
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
